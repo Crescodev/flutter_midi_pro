@@ -9,6 +9,29 @@ The `flutter_midi_pro` plugin provides functions for loading SoundFont (.sf2) fi
 
 The Fluidsynth library used in Android needs to be built with CMake. Especially for flutter_midi_pro, CMake version 3.22.1 must be installed. To install CMake, check this comment: [CMake Installation](https://github.com/melihhakanpektas/flutter_midi_pro/issues/19#issuecomment-2081251955)
 
+### Android NDK Configuration
+
+This plugin requires Android NDK version 27.0.12077973. If you encounter NDK version compatibility issues, add the following configuration to your app's `build.gradle.kts` file:
+
+```kotlin
+// filepath: android/app/build.gradle.kts
+android {
+    ndkVersion = "27.0.12077973"
+    // ...existing configurations...
+}
+```
+
+> **Note**: If your project uses the older Groovy-based build.gradle file, add this to `android/app/build.gradle`:
+>
+> ```groovy
+> android {
+>     ndkVersion "27.0.12077973"
+>     // ...existing configurations...
+> }
+> ```
+
+This configuration ensures compatibility with flutter_midi_pro and other plugins that depend on this NDK version.
+
 ## Installation
 
 To use this plugin, add `flutter_midi_pro` using terminal or pubspec.yaml file.

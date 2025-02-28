@@ -8,32 +8,56 @@ class MethodChannelFlutterMidiPro extends FlutterMidiProPlatform {
   static const MethodChannel _channel = MethodChannel('flutter_midi_pro');
 
   @override
-  Future<int> loadSoundfont(String path, int bank, int program) async {
-    final int sfId = await _channel
-        .invokeMethod('loadSoundfont', {'path': path, 'bank': bank, 'program': program});
-    return sfId;
+  Future<int> setStr(String name, String value) async {
+    return await _channel.invokeMethod('setStr', {'name': name, 'value': value});
   }
 
   @override
-  Future<void> selectInstrument(int sfId, int channel, int bank, int program) async {
-    await _channel.invokeMethod(
+  Future<int> setInt(String name, int value) async {
+    return await _channel.invokeMethod('setInt', {'name': name, 'value': value});
+  }
+
+  @override
+  Future<int> setNum(String name, double value) async {
+    return await _channel.invokeMethod('setNum', {'name': name, 'value': value});
+  }
+
+  @override
+  Future<int> getInt(String name) async {
+    return await _channel.invokeMethod('getInt', {'name': name});
+  }
+
+  @override
+  Future<double> getNum(String name) async {
+    return await _channel.invokeMethod('getNum', {'name': name});
+  }
+
+  @override
+  Future<int> loadSoundfont(String path, int bank, int program) async {
+    return await _channel
+        .invokeMethod('loadSoundfont', {'path': path, 'bank': bank, 'program': program});
+  }
+
+  @override
+  Future<int> selectInstrument(int sfId, int channel, int bank, int program) async {
+    return await _channel.invokeMethod(
         'selectInstrument', {'sfId': sfId, 'channel': channel, 'bank': bank, 'program': program});
   }
 
   @override
-  Future<void> playNote(int channel, int key, int velocity, int sfId) async {
-    await _channel.invokeMethod(
+  Future<int> playNote(int channel, int key, int velocity, int sfId) async {
+    return await _channel.invokeMethod(
         'playNote', {'channel': channel, 'key': key, 'velocity': velocity, 'sfId': sfId});
   }
 
   @override
-  Future<void> stopNote(int channel, int key, int sfId) async {
-    await _channel.invokeMethod('stopNote', {'channel': channel, 'key': key, 'sfId': sfId});
+  Future<int> stopNote(int channel, int key, int sfId) async {
+    return await _channel.invokeMethod('stopNote', {'channel': channel, 'key': key, 'sfId': sfId});
   }
 
   @override
-  Future<void> unloadSoundfont(int sfId) async {
-    await _channel.invokeMethod('unloadSoundfont', {'sfId': sfId});
+  Future<int> unloadSoundfont(int sfId) async {
+    return await _channel.invokeMethod('unloadSoundfont', {'sfId': sfId});
   }
 
   @override

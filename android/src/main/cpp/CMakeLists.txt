@@ -3,6 +3,18 @@
 
 # Sets the minimum version of CMake required to build the native library.
 cmake_minimum_required(VERSION 3.4.1)
+project(flutter_midi_pro)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Link STL statically
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++")
+
+# Remove problematic flags for ARM64
+if(ANDROID_ABI STREQUAL "arm64-v8a")
+    string(REPLACE "-Wl,--fix-cortex-a53-843419" "" CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS}")
+endif()
 
 # Create a variable fluidsynth_DIR to specify where the fluidsynth library is located.
 set(fluidsynth_DIR ${CMAKE_CURRENT_SOURCE_DIR}/fluidsynth)
