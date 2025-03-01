@@ -33,26 +33,24 @@ class MethodChannelFlutterMidiPro extends FlutterMidiProPlatform {
   }
 
   @override
-  Future<int> loadSoundfont(String path, int bank, int program) async {
+  Future<int> loadSoundfont(String path) async {
+    return await _channel.invokeMethod('loadSoundfont', {'path': path});
+  }
+
+  @override
+  Future<int> selectInstrument(int sfId, int program) async {
+    return await _channel.invokeMethod('selectInstrument', {'sfId': sfId, 'program': program});
+  }
+
+  @override
+  Future<int> playNote(int key, int velocity, int sfId) async {
     return await _channel
-        .invokeMethod('loadSoundfont', {'path': path, 'bank': bank, 'program': program});
+        .invokeMethod('playNote', {'key': key, 'velocity': velocity, 'sfId': sfId});
   }
 
   @override
-  Future<int> selectInstrument(int sfId, int channel, int bank, int program) async {
-    return await _channel.invokeMethod(
-        'selectInstrument', {'sfId': sfId, 'channel': channel, 'bank': bank, 'program': program});
-  }
-
-  @override
-  Future<int> playNote(int channel, int key, int velocity, int sfId) async {
-    return await _channel.invokeMethod(
-        'playNote', {'channel': channel, 'key': key, 'velocity': velocity, 'sfId': sfId});
-  }
-
-  @override
-  Future<int> stopNote(int channel, int key, int sfId) async {
-    return await _channel.invokeMethod('stopNote', {'channel': channel, 'key': key, 'sfId': sfId});
+  Future<int> stopNote(int key, int sfId) async {
+    return await _channel.invokeMethod('stopNote', {'key': key, 'sfId': sfId});
   }
 
   @override

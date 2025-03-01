@@ -36,16 +36,16 @@ class FlutterMidiProPlugin: FlutterPlugin, MethodCallHandler {
     private external fun getNum(name: String, sfId:Int): Double
 
     @JvmStatic
-    private external fun loadSoundfont(path: String, bank: Int, program: Int): Int
+    private external fun loadSoundfont(path: String, program: Int): Int
 
     @JvmStatic
-    private external fun selectInstrument(sfId: Int, channel:Int, bank: Int, program: Int): Int
+    private external fun selectInstrument(sfId: Int, program: Int): Int
 
     @JvmStatic
-    private external fun playNote(channel: Int, key: Int, velocity: Int, sfId: Int): Int
+    private external fun playNote(key: Int, velocity: Int, sfId: Int): Int
 
     @JvmStatic
-    private external fun stopNote(channel: Int, key: Int, sfId: Int): Int
+    private external fun stopNote(key: Int, sfId: Int): Int
 
     @JvmStatic
     private external fun unloadSoundfont(sfId: Int): Int
@@ -137,13 +137,12 @@ class FlutterMidiProPlugin: FlutterPlugin, MethodCallHandler {
         isLoading = true
         CoroutineScope(Dispatchers.IO).launch {
           val path = call.argument<String>("path") as String
-          val bank = call.argument<Int>("bank") ?: 0
           val program = call.argument<Int>("program") ?: 0
           val audioManager = flutterPluginBinding.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
           val currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
           audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0)
           val sfId = withContext(Dispatchers.Default) {
-            loadSoundfont(path, bank, program)
+            loadSoundfont(path, program)
           }
           Thread.sleep(500)
           audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, currentVolume, 0)
@@ -158,11 +157,9 @@ class FlutterMidiProPlugin: FlutterPlugin, MethodCallHandler {
       "selectInstrument" -> {
         CoroutineScope(Dispatchers.IO).launch {
           val sfId = call.argument<Int>("sfId")?:1
-          val channel = call.argument<Int>("channel")?:0
-          val bank = call.argument<Int>("bank")?:0
           val program = call.argument<Int>("program")?:0
           val response = withContext(Dispatchers.Default) {
-            selectInstrument(sfId, channel, bank, program)
+            selectInstrument(sfId, program)
           }
           if (response >= 0) result.success(response) 
           else result.error("FLUIDSYNTH_ERROR", "Failed to select instrument", response)
@@ -170,34 +167,32 @@ class FlutterMidiProPlugin: FlutterPlugin, MethodCallHandler {
       }
       "playNote" -> {
         CoroutineScope(Dispatchers.IO).launch {
-          val channel = call.argument<Int>("channel")
           val key = call.argument<Int>("key")
           val velocity = call.argument<Int>("velocity")
           val sfId = call.argument<Int>("sfId")
-          if (channel != null && key != null && velocity != null && sfId != null) {
+          if (key != null && velocity != null && sfId != null) {
             val response = withContext(Dispatchers.Default) {
-              playNote(channel, key, velocity, sfId)
+              playNote(key, velocity, sfId)
             }
             if (response >= 0) result.success(response) 
             else result.error("FLUIDSYNTH_ERROR", "Failed to play note", response)
           } else {
-            result.error("INVALID_ARGUMENT", "channel, key, and velocity are required", null)
+            result.error("INVALID_ARGUMENT", "key, velocity and sfId are required", null)
           }
         }
       }
       "stopNote" -> {
         CoroutineScope(Dispatchers.IO).launch {
-          val channel = call.argument<Int>("channel")
           val key = call.argument<Int>("key")
           val sfId = call.argument<Int>("sfId")
-          if (channel != null && key != null && sfId != null) {
+          if ( key != null && sfId != null) {
             val response = withContext(Dispatchers.Default) {
-              stopNote(channel, key, sfId)
+              stopNote(key, sfId)
             }
             if (response >= 0) result.success(response) 
             else result.error("FLUIDSYNTH_ERROR", "Failed to stop note", response)
           } else {
-            result.error("INVALID_ARGUMENT", "channel and key are required", null)
+            result.error("INVALID_ARGUMENT", "key and sfId are required", null)
           }
         }
       }

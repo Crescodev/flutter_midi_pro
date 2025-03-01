@@ -52,14 +52,13 @@ class MidiPro {
 
   /// Loads a soundfont file from the specified asset path.
   /// Returns the sfId (SoundfontSamplerId).
-  Future<int> loadSoundfontAsset(
-      {required String assetPath, required int bank, required int program}) async {
+  Future<int> loadSoundfontAsset({required String assetPath}) async {
     final tempDir = await getTemporaryDirectory();
     final tempFile = File('${tempDir.path}/${assetPath.split('/').last}');
     final byteData = await rootBundle.load(assetPath);
     final buffer = byteData.buffer;
     await tempFile.writeAsBytes(buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path, bank, program);
+    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path);
     if (sfId == -1) {
       throw Exception('Failed to load soundfont');
     }
@@ -68,14 +67,13 @@ class MidiPro {
 
   /// Loads a soundfont file from the specified data.
   /// Returns the sfId (SoundfontSamplerId).
-  Future<int> loadSoundfontData(
-      {required Uint8List data, required int bank, required int program}) async {
+  Future<int> loadSoundfontData({required Uint8List data}) async {
     final tempDir = await getTemporaryDirectory();
     final randomTempFileName = 'soundfont_${DateTime.now().millisecondsSinceEpoch}.sf2';
     final tempFile = File('${tempDir.path}/$randomTempFileName');
     tempFile.writeAsBytesSync(data);
 
-    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path, bank, program);
+    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path);
     _soundfontPaths[sfId] = tempFile.path; // Dosya yolunu kaydet
     if (sfId == -1) {
       throw Exception('Failed to load soundfont');
@@ -85,12 +83,11 @@ class MidiPro {
 
   /// Loads a soundfont file from the specified path.
   /// Returns the sfId (SoundfontSamplerId).
-  Future<int> loadSoundfontFile(
-      {required String path, required int bank, required int program}) async {
+  Future<int> loadSoundfontFile({required String path}) async {
     final tempDir = await getTemporaryDirectory();
     final tempFile = File('${tempDir.path}/${path.split('/').last}');
     await tempFile.copy(path);
-    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path, bank, program);
+    final sfId = await FlutterMidiProPlatform.instance.loadSoundfont(tempFile.path);
     if (sfId == -1) {
       throw Exception('Failed to load soundfont');
     }
@@ -99,7 +96,6 @@ class MidiPro {
 
   /// Selects an instrument on the specified soundfont.
   /// The soundfont ID is the ID returned by the [loadSoundfont] method.
-  /// The channel is a number from 1 to 16.
   /// The bank number is the bank number of the instrument on the soundfont.
   /// The program number is the program number of the instrument on the soundfont.
   /// This is the same as the patch number.
@@ -111,28 +107,17 @@ class MidiPro {
     /// The program number of the instrument on the soundfont.
     /// This is the same as the patch number.
     required int program,
-
-    /// The MIDI channel. This is a number from 0 to 15. Channel numbers start at 0.
-    int channel = 0,
-
-    /// The bank number of the instrument on the soundfont. If the soundfont does not
-    /// have banks, set this to 0.
-    int bank = 0,
   }) async {
-    return FlutterMidiProPlatform.instance.selectInstrument(sfId, channel, bank, program);
+    return FlutterMidiProPlatform.instance.selectInstrument(sfId, program);
   }
 
-  /// Plays a note on the specified channel.
-  /// The channel is a number from 0 to 15.
+  /// Plays a note.
   /// The key is the MIDI note number. This is a number from 0 to 127.
   /// The velocity is the velocity of the note. This is a number from 0 to 127.
   /// A velocity of 127 is the maximum velocity.
   /// The note will continue to play until it is stopped.
   /// To stop the note, use the [stopNote] method.
   Future<int> playNote({
-    /// The MIDI channel. This is a number from 0 to 15. Channel numbers start at 0.
-    int channel = 0,
-
     /// The MIDI note number. This is a number from 0 to 127.
     required int key,
 
@@ -142,26 +127,21 @@ class MidiPro {
     /// The soundfont ID. First soundfont loaded is 1.
     required int sfId,
   }) async {
-    return FlutterMidiProPlatform.instance.playNote(channel, key, velocity, sfId);
+    return FlutterMidiProPlatform.instance.playNote(key, velocity, sfId);
   }
 
-  /// Stops a note on the specified channel.
-  /// The channel is a number from 0 to 15.
+  /// Stops a note.
   /// The key is the MIDI note number. This is a number from 0 to 127.
   /// The note will stop playing.
   /// To play the note again, use the [playNote] method.
-  /// To stop all notes on a channel, use the [stopAllNotes] method.
   Future<int> stopNote({
-    /// The MIDI channel. This is a number from 0 to 15. Channel numbers start at 0.
-    int channel = 0,
-
     /// The MIDI note number. This is a number from 0 to 127.
     required int key,
 
     /// The soundfont ID. First soundfont loaded is 1.
     required int sfId,
   }) async {
-    return FlutterMidiProPlatform.instance.stopNote(channel, key, sfId);
+    return FlutterMidiProPlatform.instance.stopNote(key, sfId);
   }
 
   /// Unloads a soundfont from memory.

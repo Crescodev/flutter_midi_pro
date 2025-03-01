@@ -94,7 +94,7 @@ Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_getNum(JNIEnv*
 }
 
 extern "C" JNIEXPORT int JNICALL
-Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_loadSoundfont(JNIEnv* env, jclass clazz, jstring path, jint bank, jint program) {
+Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_loadSoundfont(JNIEnv* env, jclass clazz, jstring path, jint program) {
     try {
         const char *nativePath = env->GetStringUTFChars(path, nullptr);
         settings[nextSfId] = new_fluid_settings();
@@ -104,9 +104,7 @@ Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_loadSoundfont(
         synths[nextSfId] = new_fluid_synth(settings[nextSfId]);
         drivers[nextSfId] = new_fluid_audio_driver(settings[nextSfId], synths[nextSfId]);
         int sfId = fluid_synth_sfload(synths[nextSfId], nativePath, 0);
-        for (int i = 0; i < 16; i++) {
-            fluid_synth_program_select(synths[nextSfId], i, sfId, bank, program);
-        }
+        fluid_synth_program_select(synths[nextSfId], 0, sfId, 0, program);
         env->ReleaseStringUTFChars(path, nativePath);
         soundfonts[nextSfId] = sfId;
         nextSfId++;
@@ -117,27 +115,27 @@ Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_loadSoundfont(
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_selectInstrument(JNIEnv* env, jclass clazz, jint sfId, jint channel, jint bank, jint program) {
+Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_selectInstrument(JNIEnv* env, jclass clazz, jint sfId, jint program) {
     try {
-        return fluid_synth_program_select(synths[sfId], channel, soundfonts[sfId], bank, program);
+        return fluid_synth_program_select(synths[sfId], 0, soundfonts[sfId], 0, program);
     } catch (...) {
         return -1;
     }
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_playNote(JNIEnv* env, jclass clazz, jint channel, jint key, jint velocity, jint sfId) {
+Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_playNote(JNIEnv* env, jclass clazz, jint key, jint velocity, jint sfId) {
     try {
-        return fluid_synth_noteon(synths[sfId], channel, key, velocity);
+        return fluid_synth_noteon(synths[sfId], 0, key, velocity);
     } catch (...) {
         return -1;
     }
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_stopNote(JNIEnv* env, jclass clazz, jint channel, jint key, jint sfId) {
+Java_com_melihhakanpektas_flutter_1midi_1pro_FlutterMidiProPlugin_stopNote(JNIEnv* env, jclass clazz, jint key, jint sfId) {
     try {
-        return fluid_synth_noteoff(synths[sfId], channel, key);
+        return fluid_synth_noteoff(synths[sfId], 0, key);
     } catch (...) {
         return -1;
     }
