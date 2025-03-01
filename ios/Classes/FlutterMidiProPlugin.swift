@@ -5,9 +5,9 @@ import AVFoundation
 import CoreAudio
 
 public class FlutterMidiProPlugin: NSObject, FlutterPlugin {
-  var audioEngines: [Int: [AVAudioEngine]] = [:]
+  var audioEngine = AVAudioEngine()
   var soundfontIndex = 1
-  var soundfontSamplers: [Int: [AVAudioUnitSampler]] = [:]
+  var sampler = AVAudioUnitSampler()
   var soundfontURLs: [Int: URL] = [:]
   
   public static func register(with registrar: FlutterPluginRegistrar) {
@@ -21,95 +21,94 @@ public class FlutterMidiProPlugin: NSObject, FlutterPlugin {
     case "loadSoundfont":
         let args = call.arguments as! [String: Any]
         let path = args["path"] as! String
-        let bank = args["bank"] as! Int
-        let program = args["program"] as! Int
         let url = URL(fileURLWithPath: path)
-        var chSamplers: [AVAudioUnitSampler] = []
-        var chAudioEngines: [AVAudioEngine] = []
-        for _ in 0...15 {
-            let sampler = AVAudioUnitSampler()
-            let audioEngine = AVAudioEngine()
-            audioEngine.attach(sampler)
-            audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format:nil)
-            do {
-                try audioEngine.start()
-            } catch {
-                result(FlutterError(code: "AUDIO_ENGINE_START_FAILED", message: "Failed to start audio engine", details: nil))
-                return
-            }
-            do {
-                try sampler.loadSoundBankInstrument(at: url, program: UInt8(program), bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: UInt8(bank))
-            } catch {
-                result(FlutterError(code: "SOUND_FONT_LOAD_FAILED", message: "Failed to load soundfont", details: nil))
-                return
-            }
-            chSamplers.append(sampler)
-            chAudioEngines.append(audioEngine)
+        
+        audioEngine.attach(sampler)
+        audioEngine.connect(sampler, to: audioEngine.mainMixerNode, format:nil)
+        
+        do {
+            try audioEngine.start()
+        } catch {
+            result(-1)
+            return
         }
-        soundfontSamplers[soundfontIndex] = chSamplers
+            do {
+                try sampler.loadSoundBankInstrument(at: url, program: 0, bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: 0)
+            } catch {
+                result(-1)
+                return
+            }
+        
         soundfontURLs[soundfontIndex] = url
-        audioEngines[soundfontIndex] = chAudioEngines
         soundfontIndex += 1
         result(soundfontIndex-1)
+        
     case "selectInstrument":
         let args = call.arguments as! [String: Any]
         let sfId = args["sfId"] as! Int
-        let channel = args["channel"] as! Int
-        let bank = args["bank"] as! Int
         let program = args["program"] as! Int
-        let soundfontSampler = soundfontSamplers[sfId]![channel]
-        let soundfontUrl = soundfontURLs[sfId]!
+        
+        guard let soundfontUrl = soundfontURLs[sfId] else {
+            result(-1)
+            return
+        }
+        
         do {
-            try soundfontSampler.loadSoundBankInstrument(at: soundfontUrl, program: UInt8(program), bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: UInt8(bank))
+            try sampler.loadSoundBankInstrument(at: soundfontUrl, program: UInt8(program), bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: 0)
         } catch {
-            result(FlutterError(code: "SOUND_FONT_LOAD_FAILED", message: "Failed to load soundfont", details: nil))
+            result(-1)
             return
         }
-        soundfontSampler.sendProgramChange(UInt8(program), bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: UInt8(bank), onChannel: UInt8(channel))
-        result(nil)
+        
+        sampler.sendProgramChange(UInt8(program), bankMSB: UInt8(kAUSampler_DefaultMelodicBankMSB), bankLSB: 0, onChannel: 0)
+        result(0)
+        
     case "playNote":
-        let args = call.arguments as! [String: Any]
-        let channel = args["channel"] as! Int
-        let note = args["key"] as! Int
-        let velocity = args["velocity"] as! Int
-        let sfId = args["sfId"] as! Int
-        let soundfontSampler = soundfontSamplers[sfId]![channel]
-        soundfontSampler.startNote(UInt8(note), withVelocity: UInt8(velocity), onChannel: UInt8(channel))
-        result(nil)
+        do {
+            let args = call.arguments as! [String: Any]
+            let note = args["key"] as! Int
+            let velocity = args["velocity"] as! Int
+            
+            sampler.startNote(UInt8(note), withVelocity: UInt8(velocity), onChannel: 0)
+            result(0)
+        } catch {
+            result(-1)
+        }
+        
     case "stopNote":
-        let args = call.arguments as! [String: Any]
-        let channel = args["channel"] as! Int
-        let note = args["key"] as! Int
-        let sfId = args["sfId"] as! Int
-        let soundfontSampler = soundfontSamplers[sfId]![channel]
-        soundfontSampler.stopNote(UInt8(note), onChannel: UInt8(channel))
+        do {
+            let args = call.arguments as! [String: Any]
+            let note = args["key"] as! Int
+            
+            sampler.stopNote(UInt8(note), onChannel: 0)
+            result(0)
+        } catch {
+            result(-1)
+        }
+        
     case "unloadSoundfont":
-        let args = call.arguments as! [String:Any]
-        let sfId = args["sfId"] as! Int
-        let soundfontSampler = soundfontSamplers[sfId]
-        if soundfontSampler == nil {
-            result(FlutterError(code: "SOUND_FONT_NOT_FOUND", message: "Soundfont not found", details: nil))
-            return
-        }
-        audioEngines[sfId]?.forEach { (audioEngine) in
+        do {
+            let args = call.arguments as! [String:Any]
+            let sfId = args["sfId"] as! Int
+            
             audioEngine.stop()
+            soundfontURLs.removeValue(forKey: sfId)
+            result(0)
+        } catch {
+            result(-1)
         }
-        audioEngines.removeValue(forKey: sfId)
-        soundfontSamplers.removeValue(forKey: sfId)
-        soundfontURLs.removeValue(forKey: sfId)
-        result(nil)
+        
     case "dispose":
-        audioEngines.forEach { (key, value) in
-            value.forEach { (audioEngine) in
-                audioEngine.stop()
-            }
+        do {
+            audioEngine.stop()
+            soundfontURLs = [:]
+            result(0)
+        } catch {
+            result(-1)
         }
-        audioEngines = [:]
-        soundfontSamplers = [:]
-        result(nil)
+        
     default:
-      result(FlutterMethodNotImplemented)
-        break
+        result(-1)
     }
   }
 }
